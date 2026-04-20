@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoops Minesweeper</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --cell-color: #333;
+            --revealed-color: #444;
+            --border-color: #555;
+            --accent-color: #f05a28; /* Basketball Orange */
+            --text-color: #fff;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stats {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            color: var(--accent-color);
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(10, 30px);
+            grid-template-rows: repeat(10, 30px);
+            gap: 2px;
+            background-color: var(--border-color);
+            padding: 2px;
+            border: 4px solid var(--accent-color);
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: var(--cell-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .cell:hover {
+            background-color: #444;
+        }
+
+        .cell.revealed {
+            background-color: var(--revealed-color);
+            cursor: default;
+        }
+
+        .cell.mine {
+            background-color: #e74c3c; /* Red background for mines */
+        }
+
+        .cell.flagged {
+            background-color: var(--revealed-color); /* Kept dark gray for flagged cells */
+        }
+
+        .cell.incorrect-flag {
+            background-color: var(--revealed-color); /* Standard background for 'wrong' flag */
+            color: #ffcccc; /* Soft red text for the ❌ */
+        }
+
+        .btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #d3481e;
+        }
+
+        .back-link {
+            margin-top: 15px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .back-link:hover {
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>B-Ball Minesweeper</h1>
+        <div class="stats">Mines Remaining: <span id="mine-count">10</span></div>
+    </div>
+
+    <div id="grid"></div>
+
+    <button class="btn" onclick="initGame()">Restart Game</button>
+    <a href="fromScratch.html" class="back-link">← Back to Basketball Page</a>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const mineCountDisplay = document.getElementById('mine-count');
+        const width = 10;
+        const totalMines = 10;
+        let cells = [];
+        let isGameOver = false;
+        let flagsPlaced = 0;
+
+        function initGame() {
+            grid.innerHTML = '';
+            cells = [];
+            isGameOver = false;
+            flagsPlaced = 0;
+            mineCountDisplay.innerText = totalMines;
+
+            const minesArray = Array(totalMines).fill('mine');
+            const emptyArray = Array(width * width - totalMines).fill('empty');
+            const gameArray = emptyArray.concat(minesArray).sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < width * width; i++) {
+                const cell = document.createElement('div');
+                cell.setAttribute('id', i);
+                cell.classList.add('cell');
+                cell.dataset.type = gameArray[i];
+                grid.appendChild(cell);
+                cells.push(cell);
+
+                cell.addEventListener('click', function() {
+                    click(cell);
+                });
+
+                cell.oncontextmenu = function(e) {
+                    e.preventDefault();
+                    addFlag(cell);
+                }
+            }
+
+            for (let i = 0; i < cells.length; i++) {
+                let total = 0;
+                const isLeftEdge = (i % width === 0);
+                const isRightEdge = (i % width === width - 1);
+
+                if (cells[i].dataset.type === 'empty') {
+                    if (i > 0 && !isLeftEdge && cells[i - 1].dataset.type === 'mine') total++;
+                    if (i > 9 && !isRightEdge && cells[i + 1 - width].dataset.type === 'mine') total++;
+                    if (i > 10 && cells[i - width].dataset.type === 'mine') total++;
+                    if (i > 11 && !isLeftEdge && cells[i - 1 - width].dataset.type === 'mine') total++;
+                    if (i < 98 && !isRightEdge && cells[i + 1].dataset.type === 'mine') total++;
+                    if (i < 90 && !isLeftEdge && cells[i - 1 + width].dataset.type === 'mine') total++;
+                    if (i < 88 && !isRightEdge && cells[i + 1 + width].dataset.type === 'mine') total++;
+                    if (i < 89 && cells[i + width].dataset.type === 'mine') total++;
+                    cells[i].setAttribute('data-surrounding', total);
+                }
+            }
+        }
+
+        function addFlag(cell) {
+            if (isGameOver) return;
+            if (!cell.classList.contains('revealed')) {
+                if (!cell.classList.contains('flagged')) {
+                    cell.classList.add('flagged');
+                    cell.innerHTML = '🚩';
+                    flagsPlaced++;
+                } else {
+                    cell.classList.remove('flagged');
+                    cell.innerHTML = '';
+                    flagsPlaced--;
+                }
+                mineCountDisplay.innerText = totalMines - flagsPlaced;
+            }
+        }
+
+        function click(cell) {
+            if (isGameOver || cell.classList.contains('revealed') || cell.classList.contains('flagged')) return;
+
+            if (cell.dataset.type === 'mine') {
+                gameOver();
+            } else {
+                let total = cell.dataset.surrounding;
+                cell.classList.add('revealed');
+                if (total != 0) {
+                    cell.innerHTML = total;
+                } else {
+                    checkSquare(cell);
+                }
+            }
+            checkForWin();
+        }
+
+        function checkSquare(cell) {
+            const currentId = parseInt(cell.id);
+            const isLeftEdge = (currentId % width === 0);
+            const isRightEdge = (currentId % width === width - 1);
+
+            setTimeout(() => {
+                if (currentId > 0 && !isLeftEdge) click(cells[currentId - 1]);
+                if (currentId > 9 && !isRightEdge) click(cells[currentId + 1 - width]);
+                if (currentId > 10) click(cells[currentId - width]);
+                if (currentId > 11 && !isLeftEdge) click(cells[currentId - 1 - width]);
+                if (currentId < 99 && !isRightEdge) click(cells[currentId + 1]);
+                if (currentId < 90 && !isLeftEdge) click(cells[currentId - 1 + width]);
+                if (currentId < 88 && !isRightEdge) click(cells[currentId + 1 + width]);
+                if (currentId < 89) click(cells[currentId + width]);
+            }, 10);
+        }
+
+        /* UPDATED: GameOver now marks incorrect flags */
+        function gameOver() {
+            isGameOver = true;
+            cells.forEach(cell => {
+                const isMine = (cell.dataset.type === 'mine');
+                const isFlagged = cell.classList.contains('flagged');
+
+                if (isMine) {
+                    // Scenario 1: Correct Flag -> Keep the 🚩
+                    if (isFlagged) {
+                        cell.innerHTML = '🚩';
+                    } else {
+                        // Scenario 2: Unhit Mine -> Show 💣 on Red
+                        cell.innerHTML = '💣';
+                        cell.classList.add('mine');
+                    }
+                } else {
+                    // Scenario 3: Incorrect Flag -> Mark the 🚩 with ❌
+                    if (isFlagged) {
+                        cell.classList.remove('flagged');
+                        cell.classList.add('incorrect-flag');
+                        cell.innerHTML = '❌'; 
+                    }
+                }
+            });
+            setTimeout(() => alert('Game Over! You hit a mine.'), 10);
+        }
+
+        function checkForWin() {
+            let revealedSafe = 0;
+            for (let i = 0; i < cells.length; i++) {
+                if (cells[i].classList.contains('revealed') && cells[i].dataset.type === 'empty') {
+                    revealedSafe++;
+                }
+            }
+            if (revealedSafe === (width * width - totalMines)) {
+                isGameOver = true;
+                cells.forEach(cell => {
+                    if (cell.dataset.type === 'mine' && !cell.classList.contains('flagged')) {
+                        cell.classList.add('flagged');
+                        cell.innerHTML = '🚩';
+                    }
+                });
+                setTimeout(() => alert('WINNER! You cleared the court!'), 50);
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>

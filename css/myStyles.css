@@ -1,0 +1,46 @@
+body {
+    background-color: #f4f4f4; /* A light grey, clean background */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #222;
+    margin: 0;
+    padding: 20px;
+}
+
+.header-box {
+    background-color: #f05a28; 
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.main-content, .media-box {
+    background-color: white;
+    padding: 25px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.feature-img {
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    display: block;
+    margin: 20px auto;
+    border: 5px solid #f05a28;
+}
+
+nav a, .app-link {
+    color: #0047ab; 
+    text-decoration: none;
+    font-weight: bold;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
